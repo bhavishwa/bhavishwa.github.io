@@ -2033,6 +2033,7 @@ function orbitIntro() {
 
 /* ---------- views & routing ---------- */
 function showHome() {
+  $$(".frontier.is-target").forEach(x => x.classList.remove("is-target"));
   $("#home-view").hidden = false;
   const vv = $("#venture-view"); if (!vv.hidden) { vv.hidden = true; vv.innerHTML = ""; }
 }
@@ -2052,7 +2053,9 @@ function focusFrontier(id, opts) {
   requestAnimationFrame(() => { el.scrollIntoView({ behavior: scrollBehavior(opts), block: "center" }); if (!opts.initial) el.focus({ preventScroll: true }); });
   setTitle(FBY[id].name, FBY[id].line);
 }
+function clearNavCurrent() { $$(".site-nav a[aria-current]").forEach(a => a.removeAttribute("aria-current")); }
 function showVenture(id, opts) {
+  clearNavCurrent();
   const v = VBY[id], vv = $("#venture-view");
   vv.innerHTML = renderVenture(v);
   rewriteLinks(vv);
@@ -2063,6 +2066,7 @@ function showVenture(id, opts) {
   setTitle(v.name, v.name + ": " + v.tagline + " " + v.blurb);
 }
 function showNotFound(slug) {
+  clearNavCurrent();
   const vv = $("#venture-view");
   vv.innerHTML = '<section class="venture-hero on-field"><div class="container venture-hero__text">' +
     '<h1 id="v-title" tabindex="-1">We couldn’t find that page.</h1>' +
@@ -2073,10 +2077,11 @@ function showNotFound(slug) {
   $("#home-view").hidden = true; vv.hidden = false; window.scrollTo(0, 0);
   setTitle("Page not found");
 }
+let routedKey = null;
 function currentRoute() {
   const h = location.hash;
   if (h.indexOf("#/") === 0) return h.slice(2);
-  if (h.length > 1) return null;
+  if (h.length > 1 && !PATH_MODE) return null;
   if (!PATH_MODE) return "";
   let p = location.pathname;
   p = p.indexOf(BASE) === 0 ? p.slice(BASE.length) : p.replace(/^\//, "");
@@ -2087,6 +2092,7 @@ function currentRoute() {
 function route(opts) {
   opts = opts || {};
   const str = currentRoute(); if (str === null) return;
+  routedKey = location.pathname + location.search;
   const q = str.indexOf("?"), path = q < 0 ? str : str.slice(0, q), params = new URLSearchParams(q < 0 ? "" : str.slice(q + 1));
   let parts = path.split("/").filter(Boolean).map(norm).filter(Boolean);
   const known = x => VMAP[x] || SECTIONS[x] || FMAP[x];
@@ -2132,8 +2138,13 @@ document.addEventListener("click", e => {
   const dlg = a.closest("dialog[open]"); if (dlg) dlg.close();
   navigate(r);
 });
-window.addEventListener("hashchange", () => route());
-window.addEventListener("popstate", () => { if (PATH_MODE) route(); });
+// An in-page anchor jump (e.g. the skip link) leaves the path unchanged: keep the current view.
+function onLocationChange() {
+  if (PATH_MODE && location.hash.indexOf("#/") !== 0 && location.pathname + location.search === routedKey) return;
+  route();
+}
+window.addEventListener("hashchange", onLocationChange);
+window.addEventListener("popstate", () => { if (PATH_MODE) onLocationChange(); });
 
 /* ---------- tabs ---------- */
 function selectTab(role) {
