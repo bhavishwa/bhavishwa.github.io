@@ -12,7 +12,3 @@ description, so it works on any static host (GitHub Pages, cPanel, S3...).
 Other addresses fall back to index.html via the included host files:
   Netlify / Cloudflare Pages: _redirects     Vercel: vercel.json
   Apache / cPanel: .htaccess                 Nginx: nginx.conf.example
-
-Optional: to send bhavishwa.com/terravigil straight to terravigil.ai instead of
-showing the overview page, replace the terravigil folder with a 301 redirect
-(Netlify: add the line "/terravigil  https://terravigil.ai/  301!" at the top of _redirects).
